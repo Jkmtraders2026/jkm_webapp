@@ -12,12 +12,12 @@ const entities = [
 ];
 const storageKey = 'jkm-workspace-demo-v1';
 const now = () => new Date().toISOString();
-export const configured = Boolean(
-  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-);
-export const client = configured
-  ? createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
-  : null;
+// Public project settings only. Hosting variables can override this connection.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pknujlerlsewroiqbngw.supabase.co';
+const supabasePublishableKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Qp-YidY7YN1Hxs_eAOutkg_yG4-jmZX';
+export const configured = Boolean(supabaseUrl && supabasePublishableKey);
+export const client = configured ? createClient(supabaseUrl, supabasePublishableKey) : null;
 export function seed() {
   const stamp = now();
   return {
