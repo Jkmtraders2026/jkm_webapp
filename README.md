@@ -1,5 +1,11 @@
 # JKM Workspace
 
+## Shared backend deployment
+
+Use [BACKEND_SETUP.md](BACKEND_SETUP.md) for the current versioned backend,
+hosting variables, staff setup and live verification. The initial SQL setup
+below is retained for historical context; do not reapply it to an existing project.
+
 Staff management webapp for **JKM Global Traders**, using the approved navy and #FF7E00 identity. Built with HTML5, CSS, JavaScript, Vite and Supabase. Staff-first release; a client portal can follow.
 
 ## Included
@@ -16,7 +22,7 @@ Staff management webapp for **JKM Global Traders**, using the approved navy and 
 
 ## Run locally
 
-Requires Node 22.12 or later.
+Requires Node 22.12 or later for the frontend; run backend tests on Node 24 or later.
 
 ```sh
 npm ci
@@ -74,7 +80,7 @@ Only a public publishable/anon key belongs in the frontend. **Never use a servic
 
 Payment records are append-only; no browser UPDATE/DELETE grant. The database checks order currency, balance and duplicate transaction references. A locked order row serialises payment inserts against changes to the order. Quotations linked to orders are immutable; revise with a new quotation. Orders with payments cannot change customer/currency, be reduced below paid value or be cancelled. The demo mirrors these checks but is not an access-control boundary.
 
-The payment trigger is a fixed-search-path SECURITY DEFINER function with an explicit finance/admin membership check, used only by its trigger. Direct execution is revoked. Other business checks use invoker privileges. Metadata records creator and timestamps, not a full historical audit log.
+The payment trigger is a fixed-search-path SECURITY DEFINER function with an explicit finance/admin membership check, used only by its trigger. Direct execution is revoked. Other business checks use invoker privileges. The versioned backend also records insert/update snapshots in admin-only `audit_events`. Apply retention and backup policies to those snapshots.
 
 ## Deploy on Cloudflare Pages
 
@@ -97,4 +103,4 @@ Set the build variables above, deploy, and then attach a domain such as `app.jkm
 - Create a customer, quotation, accepted order, shipment and partial/final payments; verify printed totals, duplicate rejection, currency checks and two simultaneous payments competing for the last balance.
 - Check deployed security headers, sign-out, session expiry and staff removal. Back up the project and configure retention through the Supabase administrator.
 
-This release is a working staff frontend with database migrations and a demo. It does **not** include client accounts, online payments, automatic carrier updates, email/WhatsApp sending, tax invoices, refunds/reversals or full accounting. Payment correction/reversal workflow and full change history should be added before adopting it as a complete finance ledger. Lists currently load up to 10,000 rows per module; larger volumes need server-side pagination. Print documents use the browser's print / Save as PDF dialog.
+This release is a working staff frontend with database migrations and a demo. It does **not** include client accounts, online payments, automatic carrier updates, email/WhatsApp sending, tax invoices, refunds/reversals or full accounting. A payment correction/reversal workflow is still needed before adopting it as a complete finance ledger; the versioned backend now records insert/update history. Lists currently load up to 10,000 rows per module; larger volumes need server-side pagination. Print documents use the browser's print / Save as PDF dialog.

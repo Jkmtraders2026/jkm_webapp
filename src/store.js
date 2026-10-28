@@ -1,3 +1,4 @@
+import { mergeRequests, inboxCursor } from './inbox.js';
 import { createClient } from '@supabase/supabase-js';
 import { canWrite, minor, quoteTotal, orderBalance, reference, uniqueId } from './domain.js';
 const entities = [
@@ -240,6 +241,41 @@ export class Workspace {
     );
     this.data = Object.fromEntries(loaded);
   }
+  async refreshInbox() {
+    if (this.demo || !this.user) return 0;
+    const userId = this.user.id;
+    const { data: membership, error: membershipError } = await client
+      .from('staff_members')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (membershipError) throw new Error('Could not verify staff access. Retry when connected.');
+    if (!membership || !['admin', 'operations', 'finance'].includes(membership.role)) {
+      await this.signOut();
+      throw new Error('Staff access has ended. Please contact your administrator.');
+    }
+    this.role = membership.role;
+    const since = inboxCursor(this.data.website_requests);
+    let incoming = [];
+    for (let offset = 0; ; offset += 500) {
+      const { data, error } = await client
+        .from('website_requests')
+        .select('*')
+        .gte('updated_at', since)
+        .order('updated_at')
+        .order('id')
+        .range(offset, offset + 499);
+      if (error)
+        throw new Error('New website requests could not be checked. Use Refresh data to retry.');
+      incoming.push(...data);
+      if (data.length < 500) break;
+    }
+    // A late response must not repopulate the workspace after sign-out/demo switching.
+    if (this.demo || this.user?.id !== userId) return 0;
+    const oldIds = new Set(this.data.website_requests.map((row) => row.id));
+    this.data.website_requests = mergeRequests(this.data.website_requests, incoming);
+    return incoming.filter((row) => !oldIds.has(row.id)).length;
+  }
   persist() {
     try {
       localStorage.setItem(storageKey, JSON.stringify(this.data));
@@ -321,8 +357,9 @@ export class Workspace {
           this.data.payments.some(
             (p) =>
               p.id !== id &&
-              p.order_id === row.order_id &&
-              p.external_reference === row.external_reference,
+              p.method === row.method &&
+              p.external_reference.trim().toLowerCase() ===
+                row.external_reference.trim().toLowerCase(),
           )
         )
           throw new Error('This payment reference is already recorded for the order.');
@@ -354,9 +391,11 @@ export class Workspace {
     const { data, error } = await query.select().single();
     if (error)
       throw new Error(
-        error.code === 'PGRST116'
-          ? 'Record changed elsewhere or access expired. Refresh before editing.'
-          : error.message,
+        error.code === '23505' && entity === 'payments'
+          ? 'This transaction reference is already recorded. Check existing payments before retrying.'
+          : error.code === 'PGRST116'
+            ? 'Record changed elsewhere or access expired. Refresh before editing.'
+            : error.message,
       );
     this.data[entity] = id
       ? this.data[entity].map((row) => (row.id === id ? data : row))

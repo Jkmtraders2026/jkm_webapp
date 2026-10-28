@@ -571,3 +571,25 @@ ws.restore()
     if (restored) route();
   })
   .catch((error) => auth(error.message));
+
+// Keep the staff inbox current without disrupting a form the user is editing.
+let checkingInbox = false;
+async function checkInbox() {
+  if (checkingInbox || document.hidden || !ws.user || ws.demo || dialog.open) return;
+  checkingInbox = true;
+  try {
+    const added = await ws.refreshInbox();
+    if (!ws.user) return;
+    if (!dialog.open && ['dashboard', 'website_requests'].includes(view)) render();
+    if (added) notify(`${added} new website request${added === 1 ? '' : 's'} received.`);
+  } catch (error) {
+    if (!ws.user) auth(error.message);
+    else notify(error.message, true);
+  } finally {
+    checkingInbox = false;
+  }
+}
+setInterval(checkInbox, 30000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) checkInbox();
+});
