@@ -67,7 +67,7 @@ function route() {
   window.scrollTo(0, 0);
 }
 function auth(message = '') {
-  root.innerHTML = `<div class="auth-layout"><section class="auth-story"><a class="auth-brand" href="${esc(import.meta.env.VITE_WEBSITE_URL || 'https://jkmglobaltraders.co.tz')}"><img src="/jkm-logo.png" alt="JKM Global Traders"></a><div><span class="eyebrow">THE JKM WORKSPACE</span><h1>Every request.<br>Every detail.<br><em>One place.</em></h1><p>Your staff workspace for sourcing, trade coordination and customer orders.</p></div><span class="auth-caption">Connecting Markets. Delivering Value.</span></section><section class="auth-panel"><div class="login"><span class="eyebrow">STAFF ACCESS</span><h2>Welcome to JKM.</h2><p>Sign in to keep business moving.</p><form id="login-form"><label>Email address<input name="email" type="email" required autocomplete="username" placeholder="Your staff email"></label><label>Password<input name="password" type="password" required autocomplete="current-password" placeholder="Enter your password"></label><button class="button primary" type="submit">Sign in to workspace ${icon('arrow')}</button><p id="auth-status" role="status">${esc(message || (!configured ? 'Live workspace is not connected yet. You can explore the demo below.' : ''))}</p></form><div class="demo-intro"><span>Want to explore first?</span><button class="button secondary" id="demo-button">Open demo workspace ${icon('arrow')}</button><small>Sample records only. Changes stay in this browser.</small></div></div><span class="secure-note">For authorised JKM staff. Accounts are provisioned by an administrator.</span></section></div>`;
+  root.innerHTML = `<div class="auth-layout"><section class="auth-story"><a class="auth-brand" href="${esc(import.meta.env.VITE_WEBSITE_URL || 'https://jkmglobaltraders.co.tz')}"><img src="/jkm-logo.png" alt="JKM Global Traders"></a><div><span class="eyebrow">THE JKM WORKSPACE</span><h1>Every request.<br>Every detail.<br><em>One place.</em></h1><p>Your staff workspace for sourcing, trade coordination and customer orders.</p></div><span class="auth-caption">Connecting Markets. Delivering Value.</span></section><section class="auth-panel"><div class="login"><span class="eyebrow">STAFF ACCESS</span><h2>Welcome to JKM.</h2><p>Sign in to keep business moving.</p><form id="login-form"><label>Email address<input name="email" type="email" required autocomplete="username" placeholder="Your staff email"></label><label>Password<input name="password" type="password" required autocomplete="current-password" placeholder="Enter your password"></label><button class="button primary" type="submit">Sign in to workspace ${icon('arrow')}</button><p id="auth-status" role="status">${esc(message || (!configured ? 'Live workspace is not connected yet. Please contact the administrator.' : ''))}</p></form></div><span class="secure-note">For authorised JKM staff. Accounts are provisioned by an administrator.</span></section></div>`;
   document.querySelector('#login-form').onsubmit = async (event) => {
     event.preventDefault();
     const b = event.target.querySelector('button');
@@ -83,10 +83,6 @@ function auth(message = '') {
     } finally {
       b.disabled = false;
     }
-  };
-  document.querySelector('#demo-button').onclick = () => {
-    ws.openDemo();
-    route();
   };
 }
 function render() {
